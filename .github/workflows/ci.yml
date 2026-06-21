@@ -23,7 +23,7 @@ jobs:
 
       #устанавливает go на ВМ
       - name: Setup Go
-        uses: actions/setup-go@v9
+        uses: actions/setup-go@v5
         with:
           go-version: '1.25'
           cache-dependency-path: auth-service/go.sum
@@ -73,7 +73,7 @@ jobs:
         run: go build ./...
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v9
+        uses: golangci/golangci-lint-action@v6
         with:
           version: latest
           working-directory: user-service
@@ -108,7 +108,7 @@ jobs:
         run: go build ./...
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v9
+        uses: golangci/golangci-lint-action@v6
         with:
           version: latest
           working-directory: listing-service
