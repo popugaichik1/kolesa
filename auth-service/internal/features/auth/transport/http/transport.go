@@ -16,18 +16,6 @@ type AuthHTTPHandler struct {
 	log 		*core_logger.Logger
 }
 
-type UserHTTPHandler struct {
-	userRepo 	auth_service.UserRepo
-	log      	*core_logger.Logger
-}
-
-func NewUserHTTPHandler(
-	userRepo auth_service.UserRepo,
-) *UserHTTPHandler {
-	return &UserHTTPHandler{
-		userRepo: userRepo,
-	}
-}
 
 func NewAuthHTTPHandler(
 	service Service,

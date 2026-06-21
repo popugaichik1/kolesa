@@ -8,8 +8,4 @@ const (
     OpUserID    ContextKey = "opUserID"  
 )
 
-const (
-    noTimeout = -1
-)
-
 var FlushTimeOut = 5000

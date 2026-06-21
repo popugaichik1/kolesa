@@ -105,7 +105,7 @@ func (s *Service) Register(
 
 	if err != nil {
 		s.log.Error("Publish message error:", zap.String("op", op), zap.Error(err))
-		return core_domain.AuthUser{}, fmt.Errorf("Failed to publish message: %w", err)
+		return core_domain.AuthUser{}, fmt.Errorf("failed to publish message: %w", err)
 	}
 
 	return user, nil

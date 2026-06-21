@@ -36,12 +36,12 @@ func NewConsumer(cfg core_kafka.ConsumerCfg, service Service, topic string, log 
 	consumer, err := kafka.NewConsumer(&conf)
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create consumer: %w", err)
+		return nil, fmt.Errorf("failed to create consumer: %w", err)
 	}
 
 	err = consumer.SubscribeTopics([]string{topic}, nil)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to subscribe to the topic: %w", err)
+		return nil, fmt.Errorf("failed to subscribe to the topic: %w", err)
 	}
 
 	return &Consumer{
@@ -63,7 +63,12 @@ type Service interface {
 func (c *Consumer) Run(ctx context.Context) error {
 	var event UserRegisterEvent
 
-	defer c.consumer.Close()
+	defer func() {
+		if err := c.consumer.Close(); err != nil {
+			c.log.Error("consumer close error: ", zap.Error(err))
+		}
+	}()
+
 	for {
 		select{
 		case <-ctx.Done():

@@ -2,7 +2,6 @@ package transport_http
 
 import (
 	"context"
-	core_logger "user-service/internal/core/logger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -10,7 +9,6 @@ import (
 
 type HTTPHandler struct {
 	service Service
-	log  	*core_logger.Logger
 }
 
 func NewHTTPHandler(
