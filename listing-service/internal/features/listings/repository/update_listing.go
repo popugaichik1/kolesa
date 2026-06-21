@@ -55,7 +55,7 @@ func (r *Repository) UpdateListing(ctx context.Context, id uuid.UUID, update cor
 		return r.GetListingByID(ctx, id)
 	}
 
-	setClauses = append(setClauses, fmt.Sprintf("updated_at = NOW()"))
+	setClauses = append(setClauses, "updated_at = NOW()")
 	args = append(args, id)
 
 	query := fmt.Sprintf(`
