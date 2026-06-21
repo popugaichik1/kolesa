@@ -69,6 +69,7 @@ func NewAuthService(
 	jwtSecret []byte,
 	accesTokenTTL time.Duration,
 	publisher EventPublisher,
+	log *core_logger.Logger,
 ) *Service {
 	return &Service{
 		userRepo:         	userRepo,
@@ -76,5 +77,6 @@ func NewAuthService(
 		jwtSecret:       	jwtSecret,
 		accessTokenTTL:   	accesTokenTTL,
 		publisher: 			publisher,
+		log:               	log,
 	}
 }

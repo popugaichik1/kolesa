@@ -54,7 +54,7 @@ func main() {
 	logger.Debug("Initializing feature", zap.String("feature", "auth"))
 	repo := repository.NewRepo(postgresPool)
 
-	service := service.NewService(repo)
+	service := service.NewService(repo, logger)
 
 	HTTPHandler := transport_http.NewHTTPHandler(service)
 	consumer, err := transport_kafka.NewConsumer(kafkaCfg, service, core_kafka.TopicUserRegistered, logger)

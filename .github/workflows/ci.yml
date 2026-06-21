@@ -35,6 +35,10 @@ jobs:
       - name: Build
         run: go build ./...
 
+      #запускает unit-тесты сервиса
+      - name: Test
+        run: go test ./... -cover
+
       #запускает агрегатор линтера для go
       - name: Lint
         uses: golangci/golangci-lint-action@v7
@@ -46,7 +50,7 @@ jobs:
       - name: Docker build
         run: docker build -f cmd/Dockerfile .
 
-  # ─────────────────────────────────────────
+  # ────────────────────────────────────────
   # USER SERVICE
   # ─────────────────────────────────────────
   user-service:
@@ -72,6 +76,9 @@ jobs:
       - name: Build
         run: go build ./...
 
+      - name: Test
+        run: go test ./... -cover
+
       - name: Lint
         uses: golangci/golangci-lint-action@v7
         with:
@@ -82,7 +89,7 @@ jobs:
         run: docker build -f cmd/Dockerfile .
 
   # ─────────────────────────────────────────
-  # LISTING SERVICE
+  # LISTING SERVICE.
   # ─────────────────────────────────────────
   listing-service:
     name: listing-service
@@ -106,6 +113,10 @@ jobs:
 
       - name: Build
         run: go build ./...
+
+      #тестирует сервис
+      - name: Test
+        run: go test ./... -cover
 
       - name: Lint
         uses: golangci/golangci-lint-action@v7

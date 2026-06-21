@@ -68,6 +68,11 @@ func (s *Service) Register(
 		return core_domain.AuthUser{}, fmt.Errorf("%v: %v", op, err)
 	}
 
+	if err := core_domain.ValidatePassword(password); err != nil {
+		s.log.Error("password invalid:", zap.String("op", op), zap.Error(err))
+		return core_domain.AuthUser{}, fmt.Errorf("%v: %v", op, err)
+	}
+	
 	hashedPassword, err := HashPassword(password)
 	if err != nil {
 		s.log.Error("Password hash error:", zap.String("op", op), zap.Error(err))
@@ -78,6 +83,11 @@ func (s *Service) Register(
 		phoneNumber,
 		hashedPassword,
 	)
+
+	if err := user.Validate(); err != nil {
+		s.log.Error("invalid data:", zap.String("op", op), zap.Error(err))
+		return core_domain.AuthUser{}, fmt.Errorf("%v: %v", op, err)
+	}
 
 	registeredUser, err := s.userRepo.RegisterUser(ctx, user)
 	if err != nil {

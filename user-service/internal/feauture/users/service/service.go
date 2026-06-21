@@ -21,8 +21,10 @@ type Repo interface {
 
 func NewService(
 	repo Repo,
+	log *core_logger.Logger,
 ) *Service {
 	return &Service{
 		repo: repo,
+		log: log,
 	}
 }

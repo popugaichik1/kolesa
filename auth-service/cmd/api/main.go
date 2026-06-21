@@ -86,6 +86,7 @@ func main() {
 		jwtSecret,
 		accessTokenTTL,
 		KafkaProducer,
+		logger,
 	)
 
 

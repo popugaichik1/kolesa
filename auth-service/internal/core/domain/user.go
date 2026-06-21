@@ -51,7 +51,7 @@ func (u AuthUser) Validate() error {
 		return fmt.Errorf(
 			"invalid `phoneNumber` len: %d: %w",
 			phoneNumberLen,
-			core_errors.ErrInvalidArgument, 
+			core_errors.ErrInvalidArgument,
 		)
 	}
 
@@ -64,10 +64,18 @@ func (u AuthUser) Validate() error {
 		)
 	}
 
-	passlen := len([]rune(u.PasswordHash))
+	return nil
+}
+
+// ValidatePassword проверяет сырой (нехешированный) пароль на соответствие
+// парольной политике. Должна вызываться до HashPassword — после хеширования
+// эти проверки (наличие цифр/регистра) теряют смысл, так как bcrypt-хеш
+// уже не несёт семантики исходного пароля.
+func ValidatePassword(password string) error {
+	passlen := len([]rune(password))
 	if passlen < 8 {
 		return fmt.Errorf(
-			"`Password` must be minimum 8 symbols: %d: %w",
+			"`password` must be minimum 8 symbols: %d: %w",
 			passlen,
 			core_errors.ErrInvalidArgument,
 		)
@@ -77,13 +85,13 @@ func (u AuthUser) Validate() error {
 	hasLower := regexp.MustCompile(`[a-z]`)
 	hasDigitOrSpecial := regexp.MustCompile(`[0-9\W]`)
 
-	if !hasUpper.MatchString(u.PasswordHash) ||
-		!hasLower.MatchString(u.PasswordHash) ||
-		!hasDigitOrSpecial.MatchString(u.PasswordHash) {
+	if !hasUpper.MatchString(password) ||
+		!hasLower.MatchString(password) ||
+		!hasDigitOrSpecial.MatchString(password) {
 		return fmt.Errorf(
-			"invalid `PasswordHash` format: %w",
+			"invalid `password` format: %w",
 			core_errors.ErrInvalidArgument,
 		)
 	}
-	return nil 
+	return nil
 }
