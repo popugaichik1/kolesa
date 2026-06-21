@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 	core_logger "user-service/internal/core/logger"
 	core_kafka "user-service/internal/core/transport/kafka"
 
@@ -19,7 +20,7 @@ type Consumer struct {
 }
 
 
-func NewConsumer(cfg core_kafka.ConsumerCfg, service Service, topic string) (*Consumer, error) {
+func NewConsumer(cfg core_kafka.ConsumerCfg, service Service, topic string, log *core_logger.Logger) (*Consumer, error) {
 	conf := kafka.ConfigMap{
 		"bootstrap.servers":          cfg.BrokersString(),
 		"group.id":                   core_kafka.RegisterUserConsumerGroup,
@@ -46,6 +47,7 @@ func NewConsumer(cfg core_kafka.ConsumerCfg, service Service, topic string) (*Co
 	return &Consumer{
 		consumer: consumer,
 		service:  service,
+		log:      log,
 	}, nil
 }
 
@@ -54,8 +56,8 @@ type Service interface {
 		ctx context.Context,
 		ID uuid.UUID,
 		username string,
-		phoneNumber string, 
-	) (error)
+		phoneNumber string,
+	) error
 }
 
 func (c *Consumer) Run(ctx context.Context) error {
@@ -71,28 +73,28 @@ func (c *Consumer) Run(ctx context.Context) error {
 		default:
 		}
 
-		msg, err := c.consumer.ReadMessage(-1)
+		msg, err := c.consumer.ReadMessage(100 * time.Millisecond)
 		if err != nil {
-			c.log.Error("Read kafka message error: %v", zap.Error(err))
+			if err.(kafka.Error).Code() == kafka.ErrTimedOut {
+				continue
+			}
+			c.log.Error("read kafka message error", zap.Error(err))
 			continue
 		}
 
-		err = json.Unmarshal(
-			msg.Value,
-			&event,
-		)
-		if err != nil {
-			c.log.Error("Unmarshal user register event: %w", zap.Error(err))
+		if err = json.Unmarshal(msg.Value, &event); err != nil {
+			c.log.Error("unmarshal user register event error", zap.Error(err))
+			continue
 		}
 
-		err = c.service.SaveUser(
-			ctx,
-			event.ID,
-			event.Username,
-			event.PhoneNumber,
-		)
+		userID, err := uuid.Parse(event.ID)
 		if err != nil {
-			c.log.Fatal("Save user error: %w", zap.Error(err))
+			c.log.Error("parse user id from event error", zap.String("id", event.ID), zap.Error(err))
+			continue
+		}
+
+		if err = c.service.SaveUser(ctx, userID, event.Username, event.PhoneNumber); err != nil {
+			c.log.Error("save user error", zap.Error(err))
 			continue
 		}
 

@@ -57,7 +57,7 @@ func main() {
 	service := service.NewService(repo)
 
 	HTTPHandler := transport_http.NewHTTPHandler(service)
-	consumer, err := transport_kafka.NewConsumer(kafkaCfg, service, core_kafka.TopicUserRegistered)
+	consumer, err := transport_kafka.NewConsumer(kafkaCfg, service, core_kafka.TopicUserRegistered, logger)
 	if err != nil {
 		logger.Fatal("Failed to init Consumer", zap.Error(err))
 	}

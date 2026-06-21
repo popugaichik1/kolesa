@@ -38,6 +38,7 @@ func (r *Repo) SaveUser(
 	var userModel UserModel
 	if err := userModel.Scan(row); err != nil {
 		r.log.Error("Failed to save user", zap.String("op", op), zap.Error(err))
+		return err
 	}
 
 	r.log.Debug("User saved successfully:", zap.String("op", op))

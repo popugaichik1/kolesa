@@ -1,0 +1,117 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ─────────────────────────────────────────
+  # AUTH SERVICE
+  # ─────────────────────────────────────────
+  auth-service:
+    name: auth-service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: auth-service
+
+    steps:
+      #клонируем код на нашу машину
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      #устанавливает go на ВМ
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache-dependency-path: auth-service/go.sum
+
+      - name: Install librdkafka
+        run: sudo apt-get install -y librdkafka-dev
+
+      #компилирует  весь код сервиса
+      - name: Build
+        run: go build ./...
+
+      #запускает агрегатор линтера для go
+      - name: Lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: auth-service
+
+      #билдит образ сервиса
+      - name: Docker build
+        run: docker build -f cmd/Dockerfile .
+
+  # ─────────────────────────────────────────
+  # USER SERVICE
+  # ─────────────────────────────────────────
+  user-service:
+    name: user-service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: user-service
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache-dependency-path: user-service/go.sum
+
+      - name: Install librdkafka
+        run: sudo apt-get install -y librdkafka-dev
+
+      - name: Build
+        run: go build ./...
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: user-service
+
+      - name: Docker build
+        run: docker build -f cmd/Dockerfile .
+
+  # ─────────────────────────────────────────
+  # LISTING SERVICE
+  # ─────────────────────────────────────────
+  listing-service:
+    name: listing-service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: listing-service
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache-dependency-path: listing-service/go.sum
+
+      - name: Install librdkafka
+        run: sudo apt-get install -y librdkafka-dev
+
+      - name: Build
+        run: go build ./...
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: listing-service
+
+      - name: Docker build
+        run: docker build -f cmd/Dockerfile .

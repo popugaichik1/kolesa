@@ -12,16 +12,16 @@ CREATE TABLE IF NOT EXISTS authservice.users (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX IF NOT EXISTS idx_users_username ON aivagram.users(username);
+CREATE INDEX IF NOT EXISTS idx_users_username ON authservice.users(username);
 
 
-CREATE TABLE IF NOT EXISTS aivagram.refresh_tokens (
+CREATE TABLE IF NOT EXISTS authservice.refresh_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES aivagram.users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES authservice.users(id) ON DELETE CASCADE,
     token VARCHAR(255) UNIQUE NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     revoked BOOLEAN NOT NULL DEFAULT FALSE
 );
 -- Create indexes for fast lookups
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON aivagram.refresh_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON authservice.refresh_tokens(token);

@@ -24,13 +24,14 @@ func (s *Service) SaveUser(
 	)
 
 	if err := user.Validate(); err != nil {
-		s.log.Error("Validation error:", zap.String("op:", op), zap.Error(err))
+		s.log.Error("validation error", zap.String("op", op), zap.Error(err))
+		return err
 	}
 
-	err := s.repo.SaveUser(ctx, user)
-	if err != nil {
-		s.log.Error("Save user error:", zap.String("op:", op), zap.Error(err))
-	} 
+	if err := s.repo.SaveUser(ctx, user); err != nil {
+		s.log.Error("save user error", zap.String("op", op), zap.Error(err))
+		return err
+	}
 
 	return nil
 }
