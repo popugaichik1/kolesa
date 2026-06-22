@@ -11,6 +11,7 @@ import (
 	core_config "listing-service/internal/core/config"
 	core_logger "listing-service/internal/core/logger"
 	core_pgx_pool "listing-service/internal/core/repository/postgres/pool/pgx"
+	core_goredis_cache "listing-service/internal/core/repository/redis/goredis"
 	core_http_server "listing-service/internal/core/transport/http/server"
 	core_kafka "listing-service/internal/core/transport/kafka"
 	listings_repository "listing-service/internal/features/listings/repository"
@@ -55,11 +56,21 @@ func main() {
 	}
 	defer kafkaProducer.Close()
 
+
+	//Init Redis cache
+	logger.Debug("initializing redic client")
+	redisClient, err := core_goredis_cache.NewClient(ctx, core_goredis_cache.NewConfigMust())
+	if err != nil {
+		logger.Fatal("failed to init redis client", zap.Error(err))
+	}
+	defer redisClient.Close()
+
 	// Init Repository
 	repo := listings_repository.NewRepository(postgresPool)
-
+	cachedRepo := listings_repository.NewCachedRepository(repo, redisClient, logger)
+	
 	// Init Service
-	svc := listings_service.NewService(repo, kafkaProducer, logger)
+	svc := listings_service.NewService(cachedRepo, kafkaProducer, logger)
 
 	// Init Handler & Router
 	handler := listings_transport_http.NewListingsHandler(svc, logger)
