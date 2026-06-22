@@ -63,7 +63,11 @@ func main() {
 	if err != nil {
 		logger.Fatal("failed to init redis client", zap.Error(err))
 	}
-	defer redisClient.Close()
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			logger.Error("failed to close redis client:", zap.Error(err))
+		}
+	}()
 
 	// Init Repository
 	repo := listings_repository.NewRepository(postgresPool)
