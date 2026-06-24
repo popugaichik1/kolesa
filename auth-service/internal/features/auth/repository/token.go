@@ -23,7 +23,7 @@ func (r *RefreshTokenRepo) GetRefreshToken(
 
 	query := `
 		SELECT id, user_id, token, expires_at, created_at, revoked
-		FROM refresh_tokens
+		FROM authservice.refresh_tokens
 		WHERE token = $1
 	`
 	row := r.pool.QueryRow(ctx, query, tokenString)
@@ -57,7 +57,7 @@ func (r *RefreshTokenRepo) CreateRefreshToken(
 	defer cancel()
 
 	query := `
-		INSERT INTO aivagram.refresh_tokens (
+		INSERT INTO authservice.refresh_tokens (
 			id, user_id, token, expires_at, created_at, revoked
 		)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -94,8 +94,8 @@ func (r *RefreshTokenRepo) RevokeRefreshToken(
 	defer cancel()
 
 	query := `
-		UPDATE refresh_tokens
-		SET reveked = true
+		UPDATE authservice.refresh_tokens
+		SET revoked = true
 		WHERE token = $1
 	`
 

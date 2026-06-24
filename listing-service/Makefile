@@ -6,15 +6,15 @@ export PROJECT_ROOT=$(shell pwd)
 .DEFAULT_GOAL := help
 
 env-up: ## env: Запустить окружение проекта
-	@docker compose up -d listing-postgres
+	@docker compose up -d listing-postgres listing-redis
 
 env-down: ## env: Остановить окружение проекта
-	@docker compose down listing-postgres
+	@docker compose down listing-postgres listing-redis
 
 env-cleanup: ## env: Очистить окружение проекта
 	@read -p "Очистить все volume файлы окружения? [y/N]: " ans; \
 	if [ "$$ans" = "y" ]; then \
-		docker compose down listing-postgres port-forwarder && \
+		docker compose down listing-postgres listing-redis port-forwarder && \
 		rm -rf ${PROJECT_ROOT}/out/pgdata && \
 		echo "Файлы окружения очищены"; \
 	else \

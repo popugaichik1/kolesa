@@ -19,9 +19,11 @@ type AuthHTTPHandler struct {
 
 func NewAuthHTTPHandler(
 	service Service,
+	log *core_logger.Logger,
 ) *AuthHTTPHandler {
 	return &AuthHTTPHandler{
 		authService: service,
+		log:         log,
 	}
 }
 

@@ -22,7 +22,7 @@ func (r *UserRepo) RegisterUser(
 	defer cancel()
 
 	query := `
-		INSERT INTO aivagram.users (
+		INSERT INTO authservice.users (
 			id, username, phone_number, password_hash
 		)
 		VALUES ($1, $2, $3, $4)
@@ -61,7 +61,7 @@ func (r *UserRepo) GetUserByPhoneNumber(
 
 	query := 	`
 					SELECT id, username, phone_number, password_hash
-					FROM aivagram.users
+					FROM authservice.users
 					WHERE phone_number = $1
 				`
 	row := r.pool.QueryRow(
@@ -95,7 +95,7 @@ func (r *UserRepo) GetUserByID(
 
 	query := `
 		SELECT id, username, phone_number
-		FROM aivagram.users
+		FROM authservice.users
 		WHERE id = $1
 	`
 

@@ -17,13 +17,21 @@ func (r *Repo) SaveUser(
 	ctx, cancel := context.WithTimeout(ctx, r.pool.OpTimeout())
 	defer cancel()
 
-	query := 
+	// ON CONFLICT нужен потому, что Kafka гарантирует только at-least-once
+	// доставку: то же событие user.registered может прийти повторно
+	// (редеплой консьюмера, ребаланс группы и т.п.), и повтор должен быть
+	// no-op, а не падением на UNIQUE(id) с потерей сообщения.
+	query :=
 	`
 		INSERT INTO userservice.users (
 			id, version, username, phone_number
 		)
 		VALUES ($1, $2, $3, $4)
-		RETURNING id, version, username, phone_number; 
+		ON CONFLICT (id) DO UPDATE SET
+			username = EXCLUDED.username,
+			phone_number = EXCLUDED.phone_number,
+			updated_at = NOW()
+		RETURNING id, version, username, phone_number;
 	`
 
 	row := r.pool.QueryRow(

@@ -9,6 +9,7 @@ services:
     environment:
       - HTTP_ADDR=:6060
       - POSTGRES_HOST=listing-postgres
+      - REDIS_HOST=listing-redis
       - LOGGER_FOLDER=/app/out/logs
     volumes:
       - ${PROJECT_ROOT}/out/logs:/app/out/logs
@@ -27,6 +28,13 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - ${PROJECT_ROOT}/out/pgdata:/var/lib/postgresql
+    restart: always
+    networks:
+      - microservices-network
+
+  listing-redis:
+    image: redis:7.4-alpine
+    container_name: listing-redis
     restart: always
     networks:
       - microservices-network

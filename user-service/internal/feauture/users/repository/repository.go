@@ -14,9 +14,11 @@ type Repo struct {
 
 func NewRepo(
 	pool core_postgres_pool.Pool,
+	log *core_logger.Logger,
 ) *Repo {
 	return &Repo{
 		pool: pool,
+		log:  log,
 	}
 }
 

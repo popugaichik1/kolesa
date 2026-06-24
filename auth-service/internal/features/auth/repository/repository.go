@@ -13,9 +13,11 @@ type UserRepo struct {
 
 func NewUsersRepo(
 	pool core_postgres_pool.Pool,
+	log *core_logger.Logger,
 ) *UserRepo {
 	return &UserRepo{
 		pool: pool,
+		log:  log,
 	}
 }
 
@@ -28,8 +30,10 @@ type RefreshTokenRepo struct {
 
 func NewRefreshTokenRepo(
 	pool core_postgres_pool.Pool,
+	log *core_logger.Logger,
 ) *RefreshTokenRepo {
 	return &RefreshTokenRepo{
 		pool: pool,
+		log:  log,
 	}
 }

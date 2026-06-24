@@ -52,12 +52,19 @@ func main() {
 	defer postgresPool.Close()
 
 	logger.Debug("Initializing feature", zap.String("feature", "auth"))
-	repo := repository.NewRepo(postgresPool)
+	repo := repository.NewRepo(postgresPool, logger)
 
 	service := service.NewService(repo, logger)
 
 	HTTPHandler := transport_http.NewHTTPHandler(service)
-	consumer, err := transport_kafka.NewConsumer(kafkaCfg, service, core_kafka.TopicUserRegistered, logger)
+
+	dlqProducer, err := transport_kafka.NewProducer(core_kafka.NewProducerConfigMust())
+	if err != nil {
+		logger.Fatal("Failed to init DLQ producer", zap.Error(err))
+	}
+	defer dlqProducer.Close()
+
+	consumer, err := transport_kafka.NewConsumer(kafkaCfg, service, core_kafka.TopicUserRegistered, logger, dlqProducer)
 	if err != nil {
 		logger.Fatal("Failed to init Consumer", zap.Error(err))
 	}

@@ -1,0 +1,1020 @@
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kolesa-auth
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+type: Opaque
+stringData:
+  JWT_SECRET: "CHH66DtoAOOcSmKkhPujvq2GNJlMtOjnIqchiHv9yyI="
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kolesa-listing
+  labels:
+    app.kubernetes.io/name: listing
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+type: Opaque
+stringData:
+  JWT_SECRET: "CHH66DtoAOOcSmKkhPujvq2GNJlMtOjnIqchiHv9yyI="
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kolesa-user
+  labels:
+    app.kubernetes.io/name: user
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+type: Opaque
+stringData:
+  JWT_SECRET: "CHH66DtoAOOcSmKkhPujvq2GNJlMtOjnIqchiHv9yyI="
+---
+# Source: kolesa-platform/templates/postgres.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kolesa-auth-postgres
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+type: Opaque
+stringData:
+  password: "auth-db-pass"
+---
+# Source: kolesa-platform/templates/postgres.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kolesa-listing-postgres
+  labels:
+    app.kubernetes.io/name: listing
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+type: Opaque
+stringData:
+  password: "listing-db-pass"
+---
+# Source: kolesa-platform/templates/postgres.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kolesa-user-postgres
+  labels:
+    app.kubernetes.io/name: user
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+type: Opaque
+stringData:
+  password: "user-db-pass"
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kolesa-auth-migrations
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+data:
+  000001_init.down.sql: |
+    DROP TABLE aivagram.posts;
+    DROP TABLE aivagram.users;
+  000001_init.up.sql: |
+    CREATE SCHEMA authservice;
+    
+    CREATE TABLE IF NOT EXISTS authservice.users (
+        id UUID PRIMARY KEY,
+        username VARCHAR(100) NOT NULL CHECK(char_length(username) BETWEEN 1 AND 50),
+        phone_number VARCHAR(15) CHECK(
+            phone_number ~ '^\+[0-9]+$'
+            AND
+            char_length(phone_number) BETWEEN 10 AND 15
+        ),
+        password_hash VARCHAR(255) NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_users_username ON authservice.users(username);
+    
+    
+    CREATE TABLE IF NOT EXISTS authservice.refresh_tokens (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES authservice.users(id) ON DELETE CASCADE,
+        token VARCHAR(255) UNIQUE NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        revoked BOOLEAN NOT NULL DEFAULT FALSE
+    );
+    -- Create indexes for fast lookups
+    CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON authservice.refresh_tokens(token);
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kolesa-listing-migrations
+  labels:
+    app.kubernetes.io/name: listing
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+data:
+  000001_init.down.sql: |
+    DROP TABLE IF EXISTS listingservice.listings;
+    
+    DROP TYPE IF EXISTS listingservice.transmission_type;
+    DROP TYPE IF EXISTS listingservice.fuel_type;
+    DROP TYPE IF EXISTS listingservice.body_type;
+    DROP TYPE IF EXISTS listingservice.listing_status;
+    
+    DROP SCHEMA IF EXISTS listingservice;
+    
+  000001_init.up.sql: |
+    CREATE SCHEMA listingservice;
+    
+    CREATE TYPE listingservice.listing_status AS ENUM ('active', 'inactive', 'sold');
+    CREATE TYPE listingservice.body_type AS ENUM ('sedan', 'suv', 'hatchback', 'coupe', 'wagon', 'minivan', 'pickup');
+    CREATE TYPE listingservice.fuel_type AS ENUM ('gasoline', 'diesel', 'electric', 'hybrid', 'lpg');
+    CREATE TYPE listingservice.transmission_type AS ENUM ('automatic', 'manual', 'robot', 'variator');
+    
+    CREATE TABLE IF NOT EXISTS listingservice.listings (
+        id            UUID PRIMARY KEY,
+        user_id       UUID NOT NULL,
+        title         VARCHAR(200) NOT NULL CHECK (char_length(title) BETWEEN 3 AND 200),
+        description   TEXT NOT NULL DEFAULT '',
+        price         BIGINT NOT NULL CHECK (price > 0),
+        status        listingservice.listing_status NOT NULL DEFAULT 'active',
+    
+        make          VARCHAR(100) NOT NULL,
+        model         VARCHAR(100) NOT NULL,
+        year          SMALLINT NOT NULL CHECK (year BETWEEN 1900 AND 2100),
+        mileage       INT NOT NULL DEFAULT 0 CHECK (mileage >= 0),
+        color         VARCHAR(50) NOT NULL DEFAULT '',
+        body_type     listingservice.body_type NOT NULL,
+        fuel_type     listingservice.fuel_type NOT NULL,
+        transmission  listingservice.transmission_type NOT NULL,
+        engine_volume NUMERIC(4, 1) NOT NULL DEFAULT 0 CHECK (engine_volume >= 0),
+    
+        city          VARCHAR(100) NOT NULL,
+        region        VARCHAR(100) NOT NULL DEFAULT '',
+    
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    
+    CREATE INDEX IF NOT EXISTS idx_listings_user_id    ON listingservice.listings(user_id);
+    CREATE INDEX IF NOT EXISTS idx_listings_status     ON listingservice.listings(status);
+    CREATE INDEX IF NOT EXISTS idx_listings_make_model ON listingservice.listings(make, model);
+    CREATE INDEX IF NOT EXISTS idx_listings_price      ON listingservice.listings(price);
+    CREATE INDEX IF NOT EXISTS idx_listings_city       ON listingservice.listings(city);
+    CREATE INDEX IF NOT EXISTS idx_listings_created_at ON listingservice.listings(created_at DESC);
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kolesa-user-migrations
+  labels:
+    app.kubernetes.io/name: user
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+data:
+  000001_init.down.sql: |
+    DROP TABLE userservice.users;
+    
+    
+  000001_init.up.sql: |
+    CREATE SCHEMA IF NOT EXISTS userservice;
+    
+    CREATE TABLE IF NOT EXISTS userservice.users (
+        id  UUID PRIMARY KEY,
+        version INTEGER NOT NULL DEFAULT 1,
+        username VARCHAR(125) NOT NULL,
+        phone_number VARCHAR(15) CHECK(
+            phone_number ~ '^\+[0-9]+$'
+            AND
+            char_length(phone_number) BETWEEN 10 AND 15
+        ),
+        bio VARCHAR(255),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    
+    CREATE INDEX IF NOT EXISTS idx_userservice_users_username ON userservice.users (username);
+    CREATE INDEX IF NOT EXISTS idx_userservice_users_phone_number ON userservice.users (phone_number);
+    CREATE INDEX IF NOT EXISTS idx_userservice_users_id ON userservice.users (id);
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kolesa-auth
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  selector:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/instance: kolesa
+  ports:
+    - port: 80
+      targetPort: 5050
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kolesa-listing
+  labels:
+    app.kubernetes.io/name: listing
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  selector:
+    app.kubernetes.io/name: listing
+    app.kubernetes.io/instance: kolesa
+  ports:
+    - port: 80
+      targetPort: 6060
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kolesa-user
+  labels:
+    app.kubernetes.io/name: user
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  selector:
+    app.kubernetes.io/name: user
+    app.kubernetes.io/instance: kolesa
+  ports:
+    - port: 80
+      targetPort: 5050
+---
+# Source: kolesa-platform/templates/postgres.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kolesa-auth-postgres
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: auth-postgres
+    app.kubernetes.io/instance: kolesa
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+# Source: kolesa-platform/templates/postgres.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kolesa-listing-postgres
+  labels:
+    app.kubernetes.io/name: listing
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: listing-postgres
+    app.kubernetes.io/instance: kolesa
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+# Source: kolesa-platform/templates/postgres.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kolesa-user-postgres
+  labels:
+    app.kubernetes.io/name: user
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: user-postgres
+    app.kubernetes.io/instance: kolesa
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+# Source: kolesa-platform/templates/redis.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kolesa-redis
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  selector:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/instance: kolesa
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kolesa-auth
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: auth
+      app.kubernetes.io/instance: kolesa
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: auth
+        app.kubernetes.io/instance: kolesa
+        app.kubernetes.io/part-of: kolesa-platform
+    spec:
+      containers:
+        - name: auth
+          image: auth-service:1.0.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5050
+          env:
+            - name: HTTP_ADDR
+              value: ":5050"
+            - name: ACCESS_TOKEN_EXPIRY
+              value: "15m"
+            - name: ALLOWED_ORIGINS
+              value: "*"
+            - name: HTTP_SHUTDOWN_TIMEOUT
+              value: "30s"
+            - name: LOGGER_FOLDER
+              value: "/app/out/logs"
+            - name: LOGGER_LEVEL
+              value: "INFO"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_TIMEOUT
+              value: "5s"
+            - name: REFRESH_TOKEN_EXPIRY
+              value: "168h"
+            - name: TIME_ZONE
+              value: "UTC"
+            - name: POSTGRES_HOST
+              value: kolesa-auth-postgres
+            - name: POSTGRES_USER
+              value: "auth_user"
+            - name: POSTGRES_DB
+              value: "auth_db"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kolesa-auth-postgres
+                  key: password
+            - name: KAFKA_BROKERS
+              value: "test-kafka:9092"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: kolesa-auth
+                  key: JWT_SECRET
+          readinessProbe:
+            httpGet:
+              path: /api/auth/health
+              port: 5050
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/auth/health
+              port: 5050
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            limits:
+              cpu: 250m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kolesa-listing
+  labels:
+    app.kubernetes.io/name: listing
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: listing
+      app.kubernetes.io/instance: kolesa
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: listing
+        app.kubernetes.io/instance: kolesa
+        app.kubernetes.io/part-of: kolesa-platform
+    spec:
+      containers:
+        - name: listing
+          image: listing-service:1.0.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 6060
+          env:
+            - name: HTTP_ADDR
+              value: ":6060"
+            - name: HTTP_SHUTDOWN_TIMEOUT
+              value: "30s"
+            - name: LOGGER_FOLDER
+              value: "/app/out/logs"
+            - name: LOGGER_LEVEL
+              value: "INFO"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_TIMEOUT
+              value: "10s"
+            - name: TIME_ZONE
+              value: "UTC"
+            - name: POSTGRES_HOST
+              value: kolesa-listing-postgres
+            - name: POSTGRES_USER
+              value: "listing_user"
+            - name: POSTGRES_DB
+              value: "listing_db"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kolesa-listing-postgres
+                  key: password
+            - name: KAFKA_BROKERS
+              value: "test-kafka:9092"
+            - name: REDIS_HOST
+              value: kolesa-redis
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_TIMEOUT
+              value: "2s"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: kolesa-listing
+                  key: JWT_SECRET
+          readinessProbe:
+            httpGet:
+              path: /api/listings/health
+              port: 6060
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/listings/health
+              port: 6060
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            limits:
+              cpu: 250m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kolesa-user
+  labels:
+    app.kubernetes.io/name: user
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: user
+      app.kubernetes.io/instance: kolesa
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: user
+        app.kubernetes.io/instance: kolesa
+        app.kubernetes.io/part-of: kolesa-platform
+    spec:
+      containers:
+        - name: user
+          image: user-service:1.0.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5050
+          env:
+            - name: HTTP_ADDR
+              value: ":5050"
+            - name: ALLOWED_ORIGINS
+              value: "*"
+            - name: HTTP_SHUTDOWN_TIMEOUT
+              value: "30s"
+            - name: LOGGER_FOLDER
+              value: "/app/out/logs"
+            - name: LOGGER_LEVEL
+              value: "INFO"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_TIMEOUT
+              value: "10s"
+            - name: TIME_ZONE
+              value: "UTC"
+            - name: POSTGRES_HOST
+              value: kolesa-user-postgres
+            - name: POSTGRES_USER
+              value: "user_user"
+            - name: POSTGRES_DB
+              value: "user_db"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kolesa-user-postgres
+                  key: password
+            - name: KAFKA_BROKERS
+              value: "test-kafka:9092"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: kolesa-user
+                  key: JWT_SECRET
+          readinessProbe:
+            httpGet:
+              path: /api/user/health
+              port: 5050
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/user/health
+              port: 5050
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            limits:
+              cpu: 250m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+---
+# Source: kolesa-platform/templates/redis.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kolesa-redis
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+      app.kubernetes.io/instance: kolesa
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/instance: kolesa
+        app.kubernetes.io/part-of: kolesa-platform
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.4-alpine
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 25m
+              memory: 32Mi
+---
+# Source: kolesa-platform/templates/postgres.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kolesa-auth-postgres
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  serviceName: kolesa-auth-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: auth-postgres
+      app.kubernetes.io/instance: kolesa
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: auth-postgres
+        app.kubernetes.io/instance: kolesa
+        app.kubernetes.io/part-of: kolesa-platform
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18.1-bookworm
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "auth_user"
+            - name: POSTGRES_DB
+              value: "auth_db"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kolesa-auth-postgres
+                  key: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "auth_user", "-d", "auth_db"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "auth_user", "-d", "auth_db"]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+# Source: kolesa-platform/templates/postgres.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kolesa-listing-postgres
+  labels:
+    app.kubernetes.io/name: listing
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  serviceName: kolesa-listing-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: listing-postgres
+      app.kubernetes.io/instance: kolesa
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: listing-postgres
+        app.kubernetes.io/instance: kolesa
+        app.kubernetes.io/part-of: kolesa-platform
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18.1-bookworm
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "listing_user"
+            - name: POSTGRES_DB
+              value: "listing_db"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kolesa-listing-postgres
+                  key: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "listing_user", "-d", "listing_db"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "listing_user", "-d", "listing_db"]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+# Source: kolesa-platform/templates/postgres.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kolesa-user-postgres
+  labels:
+    app.kubernetes.io/name: user
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  serviceName: kolesa-user-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: user-postgres
+      app.kubernetes.io/instance: kolesa
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: user-postgres
+        app.kubernetes.io/instance: kolesa
+        app.kubernetes.io/part-of: kolesa-platform
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18.1-bookworm
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "user_user"
+            - name: POSTGRES_DB
+              value: "user_db"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kolesa-user-postgres
+                  key: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "user_user", "-d", "user_db"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "user_user", "-d", "user_db"]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+---
+# Source: kolesa-platform/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kolesa-ingress
+  labels:
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: kolesa
+      http:
+        paths:
+          - path: /api/auth
+            pathType: Prefix
+            backend:
+              service:
+                name: kolesa-auth
+                port:
+                  number: 80
+          - path: /api/listings
+            pathType: Prefix
+            backend:
+              service:
+                name: kolesa-listing
+                port:
+                  number: 80
+          - path: /api/user
+            pathType: Prefix
+            backend:
+              service:
+                name: kolesa-user
+                port:
+                  number: 80
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kolesa-auth-migrate
+  labels:
+    app.kubernetes.io/name: auth
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: auth
+        app.kubernetes.io/instance: kolesa
+        app.kubernetes.io/part-of: kolesa-platform
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: migrate/migrate:v4.19.1
+          args:
+            - "-path"
+            - "/migrations"
+            - "-database"
+            - "postgres://auth_user:$(POSTGRES_PASSWORD)@kolesa-auth-postgres:5432/auth_db?sslmode=disable"
+            - "up"
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kolesa-auth-postgres
+                  key: password
+          volumeMounts:
+            - name: migrations
+              mountPath: /migrations
+      volumes:
+        - name: migrations
+          configMap:
+            name: kolesa-auth-migrations
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kolesa-listing-migrate
+  labels:
+    app.kubernetes.io/name: listing
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: listing
+        app.kubernetes.io/instance: kolesa
+        app.kubernetes.io/part-of: kolesa-platform
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: migrate/migrate:v4.19.1
+          args:
+            - "-path"
+            - "/migrations"
+            - "-database"
+            - "postgres://listing_user:$(POSTGRES_PASSWORD)@kolesa-listing-postgres:5432/listing_db?sslmode=disable"
+            - "up"
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kolesa-listing-postgres
+                  key: password
+          volumeMounts:
+            - name: migrations
+              mountPath: /migrations
+      volumes:
+        - name: migrations
+          configMap:
+            name: kolesa-listing-migrations
+---
+# Source: kolesa-platform/templates/app.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kolesa-user-migrate
+  labels:
+    app.kubernetes.io/name: user
+    app.kubernetes.io/instance: kolesa
+    app.kubernetes.io/part-of: kolesa-platform
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: user
+        app.kubernetes.io/instance: kolesa
+        app.kubernetes.io/part-of: kolesa-platform
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: migrate/migrate:v4.19.1
+          args:
+            - "-path"
+            - "/migrations"
+            - "-database"
+            - "postgres://user_user:$(POSTGRES_PASSWORD)@kolesa-user-postgres:5432/user_db?sslmode=disable"
+            - "up"
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kolesa-user-postgres
+                  key: password
+          volumeMounts:
+            - name: migrations
+              mountPath: /migrations
+      volumes:
+        - name: migrations
+          configMap:
+            name: kolesa-user-migrations

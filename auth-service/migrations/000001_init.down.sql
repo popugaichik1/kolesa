@@ -1,2 +1,3 @@
-DROP TABLE aivagram.posts;
-DROP TABLE aivagram.users;
+DROP TABLE IF EXISTS authservice.refresh_tokens;
+DROP TABLE IF EXISTS authservice.users;
+DROP SCHEMA IF EXISTS authservice;
