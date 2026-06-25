@@ -2,6 +2,7 @@ package transport_http
 
 import (
 	"context"
+	core_domain "user-service/internal/core/domain"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -24,8 +25,13 @@ type Service interface {
 		ctx context.Context,
 		ID uuid.UUID,
 		username string,
-		phoneNumber string, 
+		phoneNumber string,
 	) (error)
+
+	GetUser(
+		ctx context.Context,
+		id uuid.UUID,
+	) (core_domain.User, error)
 }
 
 
@@ -35,7 +41,8 @@ func (h *HTTPHandler) InitRoutes() *gin.Engine {
 	routes := router.Group("/api/user")
 	{
 		routes.GET("/health", h.HealthCheck)
+		routes.GET("/:id", h.GetProfile)
 		//routes.POST("/save", h.SaveUser)
 	}
 	return router
-} 
+}
