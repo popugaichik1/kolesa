@@ -4,6 +4,8 @@ import (
 	"context"
 	core_domain "user-service/internal/core/domain"
 	core_logger "user-service/internal/core/logger"
+
+	"github.com/google/uuid"
 )
 
 
@@ -17,6 +19,11 @@ type Repo interface {
 		ctx context.Context,
 		user core_domain.SaveUser,
 	) (error)
+
+	GetUserByID(
+		ctx context.Context,
+		id uuid.UUID,
+	) (core_domain.User, error)
 }
 
 func NewService(
