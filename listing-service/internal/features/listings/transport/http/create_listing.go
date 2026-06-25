@@ -8,6 +8,18 @@ import (
 	"go.uber.org/zap"
 )
 
+//	@Summary		Создать объявление
+//	@Description	Создаёт новое объявление о продаже автомобиля (требует авторизации)
+//	@Tags			listings
+//	@Security		BearerAuth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		CreateListingRequest	true	"Данные объявления"
+//	@Success		201		{object}	ListingResponse
+//	@Failure		400		{object}	map[string]string
+//	@Failure		401		{object}	map[string]string
+//	@Failure		500		{object}	map[string]string
+//	@Router			/ [post]
 func (h *ListingsHandler) CreateListing(c *gin.Context) {
 	userID, ok := c.MustGet("user_id").(uuid.UUID)
 	if !ok {

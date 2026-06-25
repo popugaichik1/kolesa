@@ -6,6 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "user-service/docs" // swagger docs
 )
 
 type HTTPHandler struct {
@@ -38,9 +42,11 @@ type Service interface {
 func (h *HTTPHandler) InitRoutes() *gin.Engine {
 	router := gin.Default()
 
+
 	routes := router.Group("/api/user")
 	{
 		routes.GET("/health", h.HealthCheck)
+		routes.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 		routes.GET("/:id", h.GetProfile)
 		//routes.POST("/save", h.SaveUser)
 	}

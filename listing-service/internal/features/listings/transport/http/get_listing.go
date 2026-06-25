@@ -9,6 +9,14 @@ import (
 	core_errors "listing-service/internal/core/errors"
 )
 
+//	@Summary	Получить объявление по ID
+//	@Tags		listings
+//	@Produce	json
+//	@Param		id	path		string	true	"ID объявления"
+//	@Success	200	{object}	ListingResponse
+//	@Failure	400	{object}	map[string]string
+//	@Failure	404	{object}	map[string]string
+//	@Router		/{id} [get]
 func (h *ListingsHandler) GetListing(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

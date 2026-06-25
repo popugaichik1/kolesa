@@ -5,9 +5,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	core_domain "listing-service/internal/core/domain"
 	core_logger "listing-service/internal/core/logger"
 	core_middleware "listing-service/internal/core/transport/http/middleware"
+
+	_ "listing-service/docs" // swagger docs
 )
 
 type ListingsHandler struct {
@@ -35,9 +39,12 @@ func NewListingsHandler(service Service, log *core_logger.Logger) *ListingsHandl
 func (h *ListingsHandler) InitRoutes() *gin.Engine {
 	router := gin.Default()
 
+	
+
 	public := router.Group("/api/listings")
 	{
 		public.GET("/health", h.Health)
+		public.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 		public.GET("", h.GetListings)
 		public.GET("/:id", h.GetListing)
 	}

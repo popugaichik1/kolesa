@@ -20,6 +20,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// @title			Auth Service API
+// @version		1.0
+// @description	Сервис аутентификации и регистрации пользователей kolesa.
+// @BasePath		/api/auth
+// @securityDefinitions.apikey	BearerAuth
+// @in							header
+// @name						Authorization
 func main() {
 	cfg := core_config.NewConfigMust()
 	kafkaCfg := core_kafka.NewProducerConfigMust()
