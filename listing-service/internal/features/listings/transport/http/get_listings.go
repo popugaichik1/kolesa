@@ -9,6 +9,28 @@ import (
 	"go.uber.org/zap"
 )
 
+//	@Summary		Список объявлений
+//	@Description	Возвращает список объявлений с фильтрацией и пагинацией
+//	@Tags			listings
+//	@Produce		json
+//	@Param			make			query		string	false	"Марка"
+//	@Param			model			query		string	false	"Модель"
+//	@Param			city			query		string	false	"Город"
+//	@Param			region			query		string	false	"Регион"
+//	@Param			fuel_type		query		string	false	"Тип топлива"
+//	@Param			transmission	query		string	false	"Тип трансмиссии"
+//	@Param			body_type		query		string	false	"Тип кузова"
+//	@Param			year_from		query		int		false	"Год от"
+//	@Param			year_to			query		int		false	"Год до"
+//	@Param			price_from		query		int		false	"Цена от"
+//	@Param			price_to		query		int		false	"Цена до"
+//	@Param			mileage_from	query		int		false	"Пробег от"
+//	@Param			mileage_to		query		int		false	"Пробег до"
+//	@Param			page			query		int		false	"Страница"
+//	@Param			limit			query		int		false	"Размер страницы"
+//	@Success		200				{object}	ListingsResponse
+//	@Failure		500				{object}	map[string]string
+//	@Router			/ [get]
 func (h *ListingsHandler) GetListings(c *gin.Context) {
 	filter := core_domain.ListingFilter{
 		Page:  1,

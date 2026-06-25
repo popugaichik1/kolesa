@@ -11,6 +11,20 @@ import (
 	"go.uber.org/zap"
 )
 
+//	@Summary		Обновить объявление
+//	@Description	Обновляет объявление (требует авторизации, только владелец)
+//	@Tags			listings
+//	@Security		BearerAuth
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string					true	"ID объявления"
+//	@Param			request	body		UpdateListingRequest	true	"Поля для обновления"
+//	@Success		200		{object}	ListingResponse
+//	@Failure		400		{object}	map[string]string
+//	@Failure		401		{object}	map[string]string
+//	@Failure		403		{object}	map[string]string
+//	@Failure		404		{object}	map[string]string
+//	@Router			/{id} [patch]
 func (h *ListingsHandler) UpdateListing(c *gin.Context) {
 	userID, ok := c.MustGet("user_id").(uuid.UUID)
 	if !ok {

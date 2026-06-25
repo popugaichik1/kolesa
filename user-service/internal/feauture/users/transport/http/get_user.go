@@ -9,6 +9,14 @@ import (
 	"github.com/google/uuid"
 )
 
+//	@Summary	Получить профиль пользователя
+//	@Tags		user
+//	@Produce	json
+//	@Param		id	path		string	true	"ID пользователя"
+//	@Success	200	{object}	UserDTO
+//	@Failure	400	{object}	map[string]string
+//	@Failure	404	{object}	map[string]string
+//	@Router		/{id} [get]
 func (h *HTTPHandler) GetProfile(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

@@ -12,6 +12,18 @@ import (
 
 type CreateUserResponse UserDTOResponse
 
+// Register регистрирует нового пользователя.
+//
+//	@Summary		Регистрация
+//	@Description	Создаёт нового пользователя по номеру телефона и паролю
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		CreateUserRequest	true	"Данные регистрации"
+//	@Success		201		{object}	UserDTOResponse
+//	@Failure		400		{object}	map[string]string
+//	@Failure		500		{object}	map[string]string
+//	@Router			/register [post]
 func (h *AuthHTTPHandler) Register(c *gin.Context) {
 	var req CreateUserRequest
 
@@ -44,6 +56,18 @@ func (h *AuthHTTPHandler) Register(c *gin.Context) {
 }
 
 
+// Login авторизует пользователя и выдаёт access/refresh токены.
+//
+//	@Summary		Вход
+//	@Description	Авторизует пользователя по номеру телефона и паролю
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		LoginRequest	true	"Данные входа"
+//	@Success		200		{object}	LoginResponse
+//	@Failure		400		{object}	map[string]string
+//	@Failure		401		{object}	map[string]string
+//	@Router			/login [post]
 func (h *AuthHTTPHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

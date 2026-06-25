@@ -22,6 +22,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// @title			Listing Service API
+// @version		1.0
+// @description	Сервис объявлений о продаже автомобилей kolesa.
+// @BasePath		/api/listings
+// @securityDefinitions.apikey	BearerAuth
+// @in							header
+// @name						Authorization
 func main() {
 	cfg := core_config.NewConfigMust()
 	time.Local = cfg.TimeZone

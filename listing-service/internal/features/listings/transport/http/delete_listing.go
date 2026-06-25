@@ -10,6 +10,17 @@ import (
 	"go.uber.org/zap"
 )
 
+//	@Summary	Удалить объявление
+//	@Description	Удаляет объявление (требует авторизации, только владелец)
+//	@Tags		listings
+//	@Security	BearerAuth
+//	@Param		id	path	string	true	"ID объявления"
+//	@Success	204
+//	@Failure	400	{object}	map[string]string
+//	@Failure	401	{object}	map[string]string
+//	@Failure	403	{object}	map[string]string
+//	@Failure	404	{object}	map[string]string
+//	@Router		/{id} [delete]
 func (h *ListingsHandler) DeleteListing(c *gin.Context) {
 	userID, ok := c.MustGet("user_id").(uuid.UUID)
 	if !ok {

@@ -5,10 +5,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	core_domain "github.com/zosinkin/social_network/internal/core/domain"
 	core_logger "github.com/zosinkin/social_network/internal/core/logger"
 	core_middleware "github.com/zosinkin/social_network/internal/core/transport/http/middleware"
 	auth_service "github.com/zosinkin/social_network/internal/features/auth/service"
+
+	_ "github.com/zosinkin/social_network/docs" // swagger docs
 )
 
 type AuthHTTPHandler struct {
@@ -58,9 +62,12 @@ type Service interface {
 func (h *AuthHTTPHandler) InitRoutes(authService *auth_service.Service) *gin.Engine {
 	router := gin.Default()
 
+	
+
 	routes := router.Group("/api/auth")
 	{
 		routes.GET("/health", h.Health)
+		routes.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 		routes.POST("/register", h.Register)
 		routes.POST("/login", h.Login)
 		routes.POST("/refresh", h.RefreshToken)
